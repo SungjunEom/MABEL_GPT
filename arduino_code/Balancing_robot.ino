@@ -11,6 +11,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////
 
 #include <Wire.h>                                            //Include the Wire.h library so we can communicate with the gyro
+#include <Adafruit_PWMServoDriver.h>
 
 int gyro_address = 0x68;                                     //MPU-6050 I2C address (0x68 or 0x69)
 int acc_calibration_value = 1001
@@ -22,6 +23,11 @@ float pid_i_gain = 1.5;                                      //Gain setting for 
 float pid_d_gain = 30;                                       //Gain setting for the D-controller (30)
 float turning_speed = 30;                                    //Turning speed (20)
 float max_target_speed = 150;                                //Max target speed (100)
+
+int thigh_angle_right = -30 + 90;                            //90 degrees when the body of the robot and the thigh are aligned.
+int thigh_angle_left = 30 + 90;
+int shin_angle_right = 60 + 90;
+int shin_angle_left = -60 + 90;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Declaring global variables
@@ -41,12 +47,16 @@ unsigned long loop_timer;
 float angle_gyro, angle_acc, angle, self_balance_pid_setpoint;
 float pid_error_temp, pid_i_mem, pid_setpoint, gyro_input, pid_output, pid_last_d_error;
 float pid_output_left, pid_output_right;
+
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Setup basic functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void setup(){
   Serial.begin(9600);                                                       //Start the serial port at 9600 kbps
   Wire.begin();                                                             //Start the I2C bus as master
+  pwm.begin();
+  pwm.setPWMFreq(51);
   TWBR = 12;                                                                //Set the I2C clock speed to 400kHz
 
   //To create a variable pulse for controlling the stepper motors a timer is created that will execute a piece of code (subroutine) every 20us
@@ -100,6 +110,12 @@ void setup(){
   gyro_yaw_calibration_value /= 500;                                        //Divide the total value by 500 to get the avarage gyro offset
 
   loop_timer = micros() + 4000;                                             //Set the loop_timer variable at the next end loop time
+
+  //set angles.
+  pwm.setPWM(0,0,constrain(map(thigh_angle_left,0,180,150,600), 150, 600));
+  pwm.setPWM(1,0,constrain(map(thigh_angle_right,0,180,150,600), 150, 600));
+  pwm.setPWM(2,0,constrain(map(shin_angle_left,0,180,150,600), 150, 600));
+  pwm.setPWM(3,0,constrain(map(shin_angle_right,0,180,150,600), 150, 600));
 
 }
 
