@@ -13,12 +13,15 @@
 #include <Wire.h>  //Include the Wire.h library so we can communicate with the gyro
 #include <Adafruit_PWMServoDriver.h>
 
+
 int gyro_address = 0x68;           //MPU-6050 I2C address (0x68 or 0x69)
-int acc_calibration_value = 1001;  //Enter the accelerometer calibration value
+//int acc_calibration_value = 1001;  //Enter the accelerometer calibration value
+int acc_calibration_value = -2179;
 
 //Various settings
 float pid_p_gain = 15;         //Gain setting for the P-controller (15)
-float pid_i_gain = 1.5;        //Gain setting for the I-controller (1.5)
+//float pid_i_gain = 1.5;        //Gain setting for the I-controller (1.5)
+float pid_i_gain = 0;
 float pid_d_gain = 30;         //Gain setting for the D-controller (30)
 float turning_speed = 30;      //Turning speed (20)
 float max_target_speed = 150;  //Max target speed (100)
@@ -57,6 +60,8 @@ void setup() {
   pwm.begin();
   pwm.setPWMFreq(50);
   TWBR = 12;  //Set the I2C clock speed to 400kHz
+  throttle_left_motor_memory = 0;
+  throttle_right_motor_memory = 0;
 
   //To create a variable pulse for controlling the stepper motors a timer is created that will execute a piece of code (subroutine) every 20us
   //This subroutine is called TIMER2_COMPA_vect
@@ -93,6 +98,9 @@ void setup() {
   pinMode(4, OUTPUT);   //Configure digital poort 4 as output
   pinMode(5, OUTPUT);   //Configure digital poort 5 as output
   pinMode(6, OUTPUT);  //Configure digital poort 6 as output
+  pinMode(7, OUTPUT); //custom
+  pinMode(8, OUTPUT); //custom EN
+  digitalWrite(8, LOW);  
 
 
   for (receive_counter = 0; receive_counter < 500; receive_counter++) {  //Create 500 loops
@@ -124,7 +132,9 @@ void loop() {
   if (Serial.available()) {         //If there is serial data available
     received_byte = Serial.read();  //Load the received serial data in the received_byte variable
     receive_counter = 0;            //Reset the receive_counter variable
-  }
+    // Serial.print(received_byte,BIN);
+    //For Debugging!!!!!!
+   }
   if (receive_counter <= 25) receive_counter++;  //The received byte will be valid for 25 program loops (100 milliseconds)
   else received_byte = 0x00;                     //After 100 milliseconds the received byte is deleted
 
@@ -155,7 +165,7 @@ void loop() {
   if (accelerometer_data_raw < -8200) accelerometer_data_raw = -8200;  //Prevent division by zero by limiting the acc data to +/-8200;
 
   angle_acc = asin((float)accelerometer_data_raw / 8200.0) * 57.296;  //Calculate the current angle according to the accelerometer
-
+  // Serial.println(angle_acc,DEC);
   if (start == 0 && angle_acc > -0.5 && angle_acc < 0.5) {  //If the accelerometer angle is almost 0
     angle_gyro = angle_acc;                                 //Load the accelerometer angle in the angle_gyro variable
     start = 1;                                              //Set the start variable to start the PID controller
@@ -201,24 +211,30 @@ void loop() {
   pid_output = pid_p_gain * pid_error_temp + pid_i_mem + pid_d_gain * (pid_error_temp - pid_last_d_error);
   if (pid_output > 400) pid_output = 400;  //Limit the PI-controller to the maximum controller output
   else if (pid_output < -400) pid_output = -400;
-
+  // Serial.println(pid_output,DEC);
   pid_last_d_error = pid_error_temp;  //Store the error for the next loop
-
   if (pid_output < 5 && pid_output > -5) pid_output = 0;  //Create a dead-band to stop the motors when the robot is balanced
-
+  
   if (angle_gyro > 30 || angle_gyro < -30 || start == 0 || low_bat == 1) {  //If the robot tips over or the start variable is zero or the battery is empty
     pid_output = 0;                                                         //Set the PID controller output to 0 so the motors stop moving
     pid_i_mem = 0;                                                          //Reset the I-controller memory
     start = 0;                                                              //Set the start variable to 0
     self_balance_pid_setpoint = 0;                                          //Reset the self_balance_pid_setpoint variable
-  }
-
+  } 
+  // else {
+  //   Serial.println("Escape");
+  //   Serial.println(pid_output,DEC);
+  //   }
+  // Serial.println(angle_gyro);
+  // Serial.println(start);
+  
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //Control calculations
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   pid_output_left = pid_output;   //Copy the controller output to the pid_output_left variable for the left motor
   pid_output_right = pid_output;  //Copy the controller output to the pid_output_right variable for the right motor
-
+  // Serial.print("LOOP_pid_output: ");
+  // Serial.println(pid_output,DEC);
   if (received_byte & B00000001) {      //If the first bit of the receive byte is set change the left and right variable to turn the robot to the left
     pid_output_left += turning_speed;   //Increase the left motor speed
     pid_output_right -= turning_speed;  //Decrease the right motor speed
@@ -277,9 +293,10 @@ void loop() {
   ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //The angle calculations are tuned for a loop time of 4 milliseconds. To make sure every loop is exactly 4 milliseconds a wait loop
   //is created by setting the loop_timer variable to +4000 microseconds every loop.
-  while (loop_timer > micros())
-    ;
+  while (loop_timer > micros());
   loop_timer += 4000;
+  Serial.println(angle_gyro);
+  // Serial.println(pid_output,DEC);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -287,26 +304,37 @@ void loop() {
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ISR(TIMER2_COMPA_vect) {
   //Left motor pulse calculations
+  // Serial.print("ISR_pid_output: ");
+  // Serial.println(pid_output,DEC);
+  // if (pid_output > 1 || pid_output < -1) {
+  //   Serial.print("pid_output: ");
+  //   Serial.println(pid_output,DEC);
+  //   Serial.print("pid_output_left: ");
+  //   Serial.println(pid_output_left);
+  // }
   throttle_counter_left_motor++;                                     //Increase the throttle_counter_left_motor variable by 1 every time this routine is executed
   if (throttle_counter_left_motor > throttle_left_motor_memory) {    //If the number of loops is larger then the throttle_left_motor_memory variable
     throttle_counter_left_motor = 0;                                 //Reset the throttle_counter_left_motor variable
     throttle_left_motor_memory = throttle_left_motor;                //Load the next throttle_left_motor variable
     if (throttle_left_motor_memory < 0) {                            //If the throttle_left_motor_memory is negative
-      PORTD &= 0b11011111;                                           //Set output 3 low to reverse the direction of the stepper controller (5)
+      PORTD &= 0b11011111;                                           //Set output 5 low to reverse the direction of the stepper controller (5)
       throttle_left_motor_memory *= -1;                              //Invert the throttle_left_motor_memory variable
-    } else PORTD |= 0b00100000;                                      //Set output 3 high for a forward direction of the stepper motor (5)
+    } else PORTD |= 0b00100000;                                      //Set output 5 high for a forward direction of the stepper motor (5) custom
   } else if (throttle_counter_left_motor == 1) PORTD |= 0b00000100;  //Set output 2 high to create a pulse for the stepper controller
   else if (throttle_counter_left_motor == 2) PORTD &= 0b11111011;    //Set output 2 low because the pulse only has to last for 20us
-
+// if (pid_output > 1 || pid_output < -1) {
+// Serial.print("PORTD: ");
+// Serial.println(PORTD, BIN);
+// }
   //right motor pulse calculations
   throttle_counter_right_motor++;                                     //Increase the throttle_counter_right_motor variable by 1 every time the routine is executed
   if (throttle_counter_right_motor > throttle_right_motor_memory) {   //If the number of loops is larger then the throttle_right_motor_memory variable
     throttle_counter_right_motor = 0;                                 //Reset the throttle_counter_right_motor variable
     throttle_right_motor_memory = throttle_right_motor;               //Load the next throttle_right_motor variable
     if (throttle_right_motor_memory < 0) {                            //If the throttle_right_motor_memory is negative
-      PORTD |= 0b01000000;                                            //Set output 5 low to reverse the direction of the stepper controller 6
+      PORTD |= 0b10000000;                                            //Set output 7 low to reverse the direction of the stepper controller 6
       throttle_right_motor_memory *= -1;                              //Invert the throttle_right_motor_memory variable
-    } else PORTD &= 0b10111111;                                       //Set output 5 high for a forward direction of the stepper motor
-  } else if (throttle_counter_right_motor == 1) PORTD |= 0b00001000;  //Set output 4 high to create a pulse for the stepper controller
-  else if (throttle_counter_right_motor == 2) PORTD &= 0b11110111;    //Set output 4 low because the pulse only has to last for 20us 3
+    } else PORTD &= 0b01111111;                                       //Set output 7 high for a forward direction of the stepper motor
+  } else if (throttle_counter_right_motor == 1) PORTD |= 0b00010000;  //Set output 4 high to create a pulse for the stepper controller
+  else if (throttle_counter_right_motor == 2) PORTD &= 0b11101111;    //Set output 4 low because the pulse only has to last for 20us 3
 }
