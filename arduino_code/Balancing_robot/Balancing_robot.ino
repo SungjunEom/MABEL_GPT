@@ -16,20 +16,21 @@
 
 int gyro_address = 0x68;           //MPU-6050 I2C address (0x68 or 0x69)
 //int acc_calibration_value = 1001;  //Enter the accelerometer calibration value
-int acc_calibration_value = -2179;
+// int acc_calibration_value = 551; //A
+int acc_calibration_value = 1918;    //B
 
 //Various settings
-float pid_p_gain = 15;         //Gain setting for the P-controller (15)
+float pid_p_gain = 3.6;         //Gain setting for the P-controller (15)
 //float pid_i_gain = 1.5;        //Gain setting for the I-controller (1.5)
-float pid_i_gain = 0;
-float pid_d_gain = 30;         //Gain setting for the D-controller (30)
-float turning_speed = 30;      //Turning speed (20)
+float pid_i_gain = 0.8;
+float pid_d_gain = 6;         //Gain setting for the D-controller (30)
+float turning_speed = 5;      //Turning speed (20)
 float max_target_speed = 150;  //Max target speed (100)
 
-int thigh_angle_right = -30 + 90;  //90 degrees when the body of the robot and the thigh are aligned.
-int thigh_angle_left = 30 + 90;
-int shin_angle_right = 60 + 90;
-int shin_angle_left = -60 + 90;
+int thigh_angle_right = 0;  //90 degrees when the body of the robot and the thigh are aligned.
+int thigh_angle_left = 0;
+int shin_angle_right = 0;
+int shin_angle_left = 0;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Declaring global variables
@@ -57,8 +58,8 @@ Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 void setup() {
   Serial.begin(9600);  //Start the serial port at 9600 kbps
   Wire.begin();        //Start the I2C bus as master
-  pwm.begin();
-  pwm.setPWMFreq(50);
+  // pwm.begin();
+  // pwm.setPWMFreq(50);
   TWBR = 12;  //Set the I2C clock speed to 400kHz
   throttle_left_motor_memory = 0;
   throttle_right_motor_memory = 0;
@@ -113,16 +114,18 @@ void setup() {
     gyro_pitch_calibration_value += Wire.read() << 8 | Wire.read();      //Combine the two bytes to make one integer
     delayMicroseconds(3700);                                             //Wait for 3700 microseconds to simulate the main program loop time
   }
+  Serial.println("Good to go.");  
   gyro_pitch_calibration_value /= 500;  //Divide the total value by 500 to get the avarage gyro offset
   gyro_yaw_calibration_value /= 500;    //Divide the total value by 500 to get the avarage gyro offset
 
   loop_timer = micros() + 4000;  //Set the loop_timer variable at the next end loop time
 
   //set angles.
-  pwm.setPWM(0, 0, constrain(map(thigh_angle_left, 0, 180, 150, 600), 150, 600));
-  pwm.setPWM(1, 0, constrain(map(thigh_angle_right, 0, 180, 150, 600), 150, 600));
-  pwm.setPWM(2, 0, constrain(map(shin_angle_left, 0, 180, 150, 600), 150, 600));
-  pwm.setPWM(3, 0, constrain(map(shin_angle_right, 0, 180, 150, 600), 150, 600));
+  // pwm.setPWM(0, 0, constrain(map(thigh_angle_left, 0, 180, 150, 600), 150, 600));
+  // pwm.setPWM(1, 0, constrain(map(thigh_angle_right, 0, 180, 150, 600), 150, 600));
+  // pwm.setPWM(2, 0, constrain(map(shin_angle_left, 0, 180, 150, 600), 150, 600));
+  // pwm.setPWM(3, 0, constrain(map(shin_angle_right, 0, 180, 150, 600), 150, 600));
+  // delay(3);   
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -134,6 +137,7 @@ void loop() {
     receive_counter = 0;            //Reset the receive_counter variable
     // Serial.print(received_byte,BIN);
     //For Debugging!!!!!!
+    Serial.println(received_byte);  
    }
   if (receive_counter <= 25) receive_counter++;  //The received byte will be valid for 25 program loops (100 milliseconds)
   else received_byte = 0x00;                     //After 100 milliseconds the received byte is deleted
@@ -165,7 +169,7 @@ void loop() {
   if (accelerometer_data_raw < -8200) accelerometer_data_raw = -8200;  //Prevent division by zero by limiting the acc data to +/-8200;
 
   angle_acc = asin((float)accelerometer_data_raw / 8200.0) * 57.296;  //Calculate the current angle according to the accelerometer
-  // Serial.println(angle_acc,DEC);
+  // Serial.println(angle_acc,DEC);DEC
   if (start == 0 && angle_acc > -0.5 && angle_acc < 0.5) {  //If the accelerometer angle is almost 0
     angle_gyro = angle_acc;                                 //Load the accelerometer angle in the angle_gyro variable
     start = 1;                                              //Set the start variable to start the PID controller
@@ -295,7 +299,7 @@ void loop() {
   //is created by setting the loop_timer variable to +4000 microseconds every loop.
   while (loop_timer > micros());
   loop_timer += 4000;
-  Serial.println(angle_gyro);
+  // Serial.println(angle_gyro);
   // Serial.println(pid_output,DEC);
 }
 

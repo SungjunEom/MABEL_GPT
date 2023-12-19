@@ -2,10 +2,10 @@ import socket
 import openai
 import threading
 
-openai.api_key = ""
+openai.api_key = "" # OPENAI API KEY
 
-IP = ''
-PORT = 32002
+IP = '' # IP
+PORT = 0 # PORT
 SIZE = 1024
 ADDR = (IP, PORT)
 clients = []
