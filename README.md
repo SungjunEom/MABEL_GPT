@@ -1,6 +1,6 @@
 # MABEL GPT
 ## Introduction
-To make MABEL understand human language and follow instructions.
+The purpose of this project is to make MABEL understand human language and follow instructions.
 Like these:
 - PaLM-SayCan.
 - Interactive Language: Talking to Robots in Real Time.
