@@ -35,7 +35,7 @@ The robot language will be parsed and sended to the arduino through serial commu
 
 ## Implementation
 ![Method](./docs/images/impl.png)
-The natural language is typed on the laptop and sended to server. Server will replace "*Draw a triangle*" with the user input. Then server sends the prompt to the OpenAI server through GPT-3.5 API or GPT-4 API. After receiving a response from the OpenAI server, which should be the robot language, the response is sended to the MABEL. Finally, the MABEL parses the robot language into low level signals and directly control the motors.
+The natural language is typed on the laptop and sended to server. Server will replace "*Draw a triangle*" with the user input. Then server sends the prompt to the OpenAI server through GPT-3.5 API or GPT-4 API. After receiving a response from the OpenAI server, which should be the robot language, the response is sended to the MABEL. Finally, the MABEL parses the robot language into low level signals and directly controls the motors.
 
 ## Progress
 
