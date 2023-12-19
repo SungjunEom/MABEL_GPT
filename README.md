@@ -1,238 +1,46 @@
-# MABEL (Multi Axis Balancer Electronically Levelled)
-![MABEL](https://i.imgur.com/ciOArSG.jpeg "MABEL")
-## Table of contents
- - [About MABEL](#about-mabel)
-   - [Features and design](#features-and-design)
- - [Bill of Materials (BOM)](#bill-of-materials)
-   - [3D Printable](#3d-printable)
-   - [Non 3D Printable](#non-3d-printable)
-     - [Electronic components](#electronic-components)
-     - [Mechcanical components](#mechanical-components)
- - [Build instructions](#build-instructions)
-     - [Mechanical assembly](#mechanical-assembly)
-     - [Electronics assembly](#electronics-assembly)
- - [Installation](#installation)
-     - [Dependencies](#required-librariesdependencies)
- - [Usage](#usage)
-     - [Inverse kinematics - Moving the legs](#iksolve---inverse-kinematics-for-mabel)
-     - [Driving controls and serial communication](#driving-controls)
- - [Contact/Support](#contactsupport)
+# MABEL GPT
+## Introduction
+To make MABEL understand human language and follow instructions.
+Like these:
+- PaLM-SayCan.
+- Interactive Language: Talking to Robots in Real Time.
 
-## About MABEL
-**MABEL** is an **ongoing** open source self balancing robot project that is inspired by the famous [Boston Dynamics Handle robot](https://www.youtube.com/watch?v=-7xvqQeoA8c "Boston Dynamics Handle robot"). The robot is controlled via an **Arduino** that handles all of the PID calculations (based off of open source [YABR](http://www.brokking.net/yabr_main.html " YABR") firmware) based on the angle received from an MPU-6050 Accelerometer/Gyro, whilst a **Raspberry pi** (code in **python**) manages Bluetooth and servo control, running an inverse kinematics algorithm to translate the robot legs perfectly in two axes.
+## Method
+![Method](./docs/images/mabel.png)
+It's hard to train a new LLM to make this possible. It takes a lot of time and money. So I decided to utilize in-context learning of existing LLM, for example GPT-3.5.
 
-> The goal of **MABEL** is to create an affordable legged balancing robot platform like the the Boston Dynamics Handle robot that can built on a hobby scale using cheap Amazon parts and components.
+Given the natural language, GPT-3.5 changes the words into another form of language which I refer to the robot language in this document. The prompt is below:
 
-By having a balancing platform with articulated legs **MABEL** will be able to actively balance in multiple Axes and vary leg length depending on the surroundings to increase terrain and off-road performance.
+- I made a robot that follows a robot
+language. I'll describe the grammar of the language. D
+means going forward, B means going backward and RL
+means rotating left-wise and RR means rotating right-
+wise. You must add a colon followed by a number, then
+it describes how much time the robot uses for the left
+command. The speed of robot is predetermined. RL or RR
+must be also followed by a colon and a number. The
+number means how much the robot rotates in degrees.
+I'll give you some examples. D:13 D:10 RR:5 RL:60 D:1
+The code above means for a robot to go forward for 13
+seconds then go forward for 10 seconds then rotate
+right 5 degrees then rotate left 60 degrees then go
+forward for 1 second. Please translate "*Draw a triangle*" in the robot language. IMPORTANT!!! Do not
+add any comment! Do not say "To draw something, you
+can use the following commands". Do not describe nor
+explain what you provided.
 
-**MABEL** has built on the open source [YABR](http://www.brokking.net/yabr_main.html "YABR") project for the PID controller but with the addition of servos and a pi that helps interface them and control everything.
-### Features and design 
-Some of the stand-out features that make **MABEL** different from other balancing robots are:
-- **Movable Legs** (**Enhanced mobility**, **terrain** and **stabilisation** capabilities)
-- **Inverse Kinematics** for each legs that enables accurate translation in (x, y) coordinates using the [IKSolve.py](https://github.com/raspibotics/MABEL/blob/master/raspi_code/IKSolve.py) class
-- **Raspberry Pi** enabled (for **Bluetooth control**, **wireless connectivity** and **Computer Vision** capabilities)
-- **Common/cheap build materials** (All of the materials can be purchased off of Amazon/Ebay for a low cost)
-- **Stepper Motors** (Accurate positioning and precise control)
+The part "*Draw a triangle*" will be replaced with a desired instruction at running time.
 
-## Bill of materials
-### 3D Printable
-3D Printable files are found in [/CAD/3D Models (To Print)](https://github.com/raspibotics/MABEL/tree/master/CAD/3D%20Models%20(To%20print))
-- [BatteryPack](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/BatteryPack.stl) (**Optional** - holds LiPo battery onto back of robot with M5 Bolts)
-- **2x** [BodyPanel](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/BodyPanel.stl) (Mounting for the 'Hip' servos and side panels of the body)
-- [BodyTop](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/BodyTop.stl)
-- **4x** [DriverGear](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/DriverGear.stl)
-- [Housing](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/Housing.stl) (**LOWER** body housing for MABEL)
-- **2x** [LowerLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/LowerLeg.stl)
-- **2x** [UpperLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/UpperLeg.stl)
-- [PanBracketHead](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/PanBracketHead.stl) (**Optional** Pan servo bracket for head assembly)
-- [TiltBracketHead](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/TiltBracketHead.stl) (**Optional** Tilt servo bracket for head assembly)
-- [UpperBody](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/UpperBody.stl) (**UPPER** body housing for MABEL)
-- **2x** [Wheel](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/Wheel.stl) (**Optional** You can 3D Print your own set of wheels, or buy wheels)
+The robot language will be parsed and sended to the arduino through serial communication.
 
-### Non 3D Printable
-Here are the Non 3D printable materials to build **MABEL** that **must be either purchased or sourced**. **This includes all of the electronics, mechanical hardware and fixings.** It is **recommended to overbuy the nuts and bolts fixings, as the exact number can change between builds.** This [amazon list](https://www.amazon.co.uk/gp/registry/wishlist/1K7SOU8MRG2K7/ref=cm_wl_huc_view) contains a rough idea of what needs to be purchased.
+## Implementation
+![Method](./docs/images/impl.png)
+The natural language is typed on the laptop and sended to server. Server will replace "*Draw a triangle*" with the user input. Then server sends the prompt to the OpenAI server through GPT-3.5 API or GPT-4 API. After receiving a response from the OpenAI server, which should be the robot language, the response is sended to the MABEL. Finally, the MABEL parses the robot language into low level signals and directly control the motors.
 
-### Electronic components
-- **Raspberry Pi** Zero W
-- **PCA9865** Servo Controller (A **PiconZero** could, and previously was used)
-- **Variable voltage regulator** (**Optionally** 2x regulator to supply servos with a higher voltage than the 5V required for the  pi)
-- **Arduino** Uno 
-- **6x** MG996R metal gear servos
-- **2x** 38mm NEMA17 stepper motors
-- **2x** A4988 (or **DRV8825**) stepper motor drivers 
-- Arduino CNC Shield
-- MPU-6050 gyro/accelerometer
-- 11.1V 2800mAh 3S LiPo (**LiPo battery charger is required**)
+## Progress
 
-### Mechanical components
-- **Optional** Grippy rubber material for tyre tread if you are using the [Wheel](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/Wheel.stl) provided.
-- **6x** Aluminium servo horns (for **MG996R** servos)
-- **8x** 	10mm diameter bearings (5mm internal diameter) x 4mm depth 
-- **12x** 10mm M3 bolts
-- **12** 15mm M5 bolts
-- **4x** 30mm M5 bolts
-- **16x** 15mm M4 bolts
-- **20x** M5 locknuts and washers
+- [x] All of the codes regarding LLM are completed.
 
-## Build instructions
-***UNDER CONSTRUCTION**: This section will include:*
-- *Recommended 3D printer settings for 3D Printable parts*
-- *Mechanical assembly instructions*
-- *Electronics/Wiring instructions*
+![Demo](./docs/images/demo.png)
 
-## Mechanical assembly
----
-
-
-
-### **Step 1:** Press the bearings into the joints 
-<img src="https://i.imgur.com/iYMrObD.jpg" alt="push fit the bearings and secure with a nut and bolt" title="Push fit bearings" width="270" height="210" ALIGN="right" HSPACE="65"/>
-
- Each leg section ([UpperLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/UpperLeg.stl)  and [LowerLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/LowerLeg.stl)) requires **two bearings (thats 8x bearings in total) to push fit on opposing sides** to ensure smooth rotation. The bearings can be quite tricky to fit so it's **advisable to either apply slow, even pressure with a bench vice**, or to **soften the plastic with a hairdryer** to make it easier to push in by hand. Once you've fitted the bearings, you need to **push an M5 (**4x in total**) (30mm) bolt through** the hole left and **secure with a locknut**.
- [*More reference images for Step 1*](https://github.com/raspibotics/MABEL/tree/master/docs/images/Mech_Step_1)
-
----
-
-
-
-### **Step 2:** Attach **4x** Servos to the [UpperLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/UpperLeg.stl)(s)and [BodyPanel](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/BodyPanel.stl)(s) using **M4 (15mm)** bolts 
-<img src="https://i.imgur.com/Y1E7Eal.jpg" alt="Attach servos with M4 bolt" title="Attach servos" width="270" height="200" ALIGN="right" HSPACE="65"/>
-
-**4x MG996R servos** must be secured to **2x BodyPanel and 2x UpperLeg** using **4x M4 (15mm) bolts (16x in total)**. The servos **must sit flat** against these parts with the **shaft facing towards the outside of the robot**. *Your **servos may have a small rib** that you can **easily sand or file off** to get the servo to sit in this orientation.* [*More reference images for Step 2*](https://github.com/raspibotics/MABEL/tree/master/docs/images/Mech_Step_2)
-
----
-
-
-
-### **Step 3:** Push fit and screw the **servo horns** into the [DriverGear](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/DriverGear.stl)(s) and attach the assemblies to the servos 
-<img src="https://i.imgur.com/08lZZj5.jpg" alt="push fit servo horns and attach gear to servo" title="Assemble DriverGear" width="270" height="200" ALIGN="right" HSPACE="65"/>
-
-Take your **4x DriverGear parts** and **4x Aluminium Servo horns** and push it into the recess on the bottom of the gear. Then **secure the servo horns to each of the gears using the screws** that (should) come with servo horns. Once the gear assembly has been completed, screw it on to the **servo shaft** using **one M3 (10mm) bolt per servo**. [*More reference images for Step 3*](https://github.com/raspibotics/MABEL/tree/master/docs/images/Mech_Step_3)
-
----
-
-### **Step 4:** Attach the NEMA17 Motors to the [LowerLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/LowerLeg.stl) and fit the wheels
-<img src="https://i.imgur.com/fxMZ7wn.jpg" alt="push fit wheels, attach motors" title="Fit wheels and motors" width="270" height="270" ALIGN="right" HSPACE="65"/>
-
-Secure one **NEMA17** (**2x in total**) stepper motor to each of your (**2x**) [LowerLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/LowerLeg.stl) parts with **4x M3 (10mm)** bolts (**8x in total**). Next, prepare your wheels and then **push fit** onto the NEMA17 shafts, **securing if necessary with an M4 bolt**:
-- If you are **using the included** [Wheel](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/Wheel.stl) part, you will **need to wrap the outside** in a thin layer of **grippy material** such as **elastic bands** or in my case, **rubber 'O' rings** which help create **traction**.
-- If you've **sourced your own wheels**, insert them onto the NEMA17 shafts, and secure as necessary. 
-
-[*More reference images for Step 4*](https://github.com/raspibotics/MABEL/tree/master/docs/images/Mech_Step_4)
-
----
-
-### **Step 5:** Attach the [LowerLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/LowerLeg.stl), [UpperLeg](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/UpperLeg.stl) and [BodyPanel](https://github.com/raspibotics/MABEL/blob/master/CAD/3D%20Models%20(To%20print)/BodyPanel.stl) assemblies together using **4x M5 locknuts**
-
-<img src="https://i.imgur.com/KUTSnZk.jpg" alt="Attach all assemblies so far together" title="Fit everything together" width="300" height="200" ALIGN="right" HSPACE="65" VSPACE="5"/>
-
-Now that you have fitted the BodyPanel and UpperLeg parts with servos (**Step 2**) and gears (**Step 3**), and prepared the UpperLeg and LowerLeg sections with bearings, an M5 bolt and a lock nut each (**Step 1**), you can **insert the UpperLeg section into the BodyPanel** and **secure it with a locknut** on the back (servo) side. Then, **secure the LowerLeg assembly to the UpperLeg** assembly with another **M5 locknut** to form one leg. **This step should then be repeated for the side.** 
-
-**NOTE:** When fitting the parts together, **special attention** should be considered to the **position of the servo rotors**. With standard 180 degree servos, full range of motion is only possible with one way of the legs being bent (The minimum leg height requires a greater than 90 degree angle for example) - **decide which way the legs should bend out** and turn the servo gear manually by hand to **allow a greater range of motion in that direction** than the other (it will be opposite because of the gear drive). You will then **calibrate the servos later on** with a new 0 **position** that's needed for the legs to work properly.
-
-[*More reference images for Step 5*](https://github.com/raspibotics/MABEL/tree/master/docs/images/Mech_Step_5)
-
----
-## Electronics Assembly
-***This section will contain instructions about the construction of the robot electronics***
-
----
-## Installation
-### Required Libraries/Dependencies
-The **MABEL** project relies on multiple open-source and independent libraries, whilst MABELs own classses and functions may run natively, certain libraries are required for full functionality.
-
-- Adafruit ServoKit PCA9865 servo controller library - [Installation guide](https://learn.adafruit.com/adafruit-16-channel-servo-driver-with-raspberry-pi/overview)
-- python3 Cwiid (**Optional** - If you want to use a Wiimote controller) - [Installation guide](https://automaticaddison.com/how-to-make-a-remote-controlled-robot-using-raspberry-pi/)
-- [approxeng.input](https://approxeng.github.io/approxeng.input/) (**Optional** - If you want to use a different controller - **recommended**)
-  
-***The controller code is still under development, however the approxeng.input library is recommended to develop controller code with - Versions for both the approxeng.input libary and Cwiid will be released eventually.***
-
-Aftere following the installation instructions for the [ServoKit](https://learn.adafruit.com/adafruit-16-channel-servo-driver-with-raspberry-pi/overview) and controller library of your choice, you should be able to clone to the Raspberry Pi with `git clone https://www.github.com/raspibotics/MABEL`, all controller code, and other scripts should be written in the [MABEL/raspi_code/](https://github.com/raspibotics/MABEL/tree/master/raspi_code) directory so that the code will be able to reference the code already included.
-
-
-
-## Usage 
-### IKSolve - (Inverse Kinematics for MABEL)
-**IKSolve** is the class that handles the **inverse kinematics** functionality for **MABEL** [(IKSolve.py)](https://github.com/raspibotics/MABEL/blob/master/raspi_code/IKSolve.py) and allows for the legs to be translated using **(x, y)** coordinates. It's really simple to use, all that you need to specify are the **home values of each servo** (these are the angles that when passed over to your servos, make the legs point **directly and straight downwards** at **90 degrees**). Keep in mind that the values below are just my servo home positions, and **yours will be different**. 
- 
- *The code below is taken directly from [IKDemo.py](https://github.com/raspibotics/MABEL/blob/master/raspi_code/IKDemo.py)*
-
-```python
-from IKSolve import IKSolve
-
-# Servo Home Values (degrees) - ***YOURS WILL DIFFER***
-# ru_home = 50   # Right leg upper joint home position (servo_angle[0])
-# rl_home = 109   # Right leg lower joint home position (servo_angle[1])
-# lu_home = 52   # Left leg upper joint home position (servo_angle[2])
-# ll_home = 23   # Left leg lower joint home position (servo_angle[3])
- 
-ik_handler = IKSolve(ru_home=50, rl_home=109,  # Pass home positions to IK class
-                     lu_home=52, ll_home=23)  
-```
-***The class can also be initialised with different leg length segments but these are best left to default unless you have changed the length of any of the leg components.***
-```python
-def __init__(self, ru_home, rl_home, lu_home,  
-                 ll_home, upper_leg=92, lower_leg=75):
-```
-To recieve suitable angles for each servo to move to (x, y) you must use `translate_xy(self, x, y, flip=False)` (Flip inverts the direction that the legs bend, by default this should be set **False**)
-
-- **x translates the robot leg vertically and y translates the leg horizontally**, each value should be in integer mm
-  
- - **x is the distance between the upper leg pivot and wheel centre** (Vertically) - acceptable range for MABEL (160-98mm)
-  
- - **y is the distance between the upper leg pivot and wheel centre** (Horizontally) - acceptable range for MABEL (-50, 50mm)
- 
-```python
-  x = int(input('x:'))
-  y = int(input('y:'))
-  servo_angle = ik_handler.translate_xy(x, y, flip=False) 
-  # The angles calculated are stored in a tuple E.g. servo_angles[0-3]
-  # You can pass these values to your servo controller code
-```
-Here are the **mathematical equations** that were calculated for MABELs inverse kinematics, and are expressed in the ```translate_xy()``` function in IKSolve. A is used for calculating angles for the top servos (mounted to the BodyPanel) B is used to calculate angles for the 'Knee' servos. ***Upper*** represents the distance of the **UpperLeg** from pivot to pivot and ***lower*** represents the distance between the **LowerLeg** pivot and centre of the wheel (motor shaft).
-
-<a href="https://github.com/raspibotics/MABEL/blob/master/docs/IKSolve/IKSolveFormulaForA.png" target="_blank"><img src="https://latex.codecogs.com/png.latex?A&space;=&space;Cos^{-1}(\frac{upper^{2}&plus;x^{2}-lower^{2}}{2\cdot&space;upper\cdot&space;x})&space;&plus;&space;Tan^{-1}(\frac{y}{x})" title="A = Cos^{-1}(\frac{upper^{2}+x^{2}-lower^{2}}{2\cdot upper\cdot x}) + Tan^{-1}(\frac{y}{x})" /></a>
-
-<a href="https://github.com/raspibotics/MABEL/blob/master/docs/IKSolve/IKSolveFormulaForB.png" target="_blank"><img src="https://latex.codecogs.com/png.latex?B&space;=&space;Cos^{-1}(\frac{upper^{2}&plus;lower^{2}-(x^{2}&plus;y^{2})}{2\cdot&space;upper\cdot&space;lower})" title="B = Cos^{-1}(\frac{upper^{2}+lower^{2}-(x^{2}+y^{2})}{2\cdot upper\cdot lower})" /></a>
-### Driving controls
-**MABEL** is designed to work by listening to commands on the Arduino (PID contoller) end that are sent to it by the raspberry pi over serial (using [pySerial](https://pyserial.readthedocs.io/en/latest/)). This allows easy control using bluetooth and web based solutions that are much more difficult to get working on an Arduino. The code snippets below show how you could modify/write your own controller code by sending specific bytes over serial to the arduino and [YABR](http://www.brokking.net/yabr_main.html) based firmware.
-
-In order to use serial commands to drive MABEL around, you first need to find what serial port that the USB connection between the raspberry pi and arduino is called. In my case it was ```/dev/ttyACM0``` but yours could be different. To find what serial port your arduino is connected to, type ```ls /dev/tty*``` into the terminal **without the arduino connected**. Then **reconnect the arduino**, run ```ls /dev/tty*``` again, and make a note of which serial port appears to be listed that was not previously there - **this is your serial port.**
-
-*Once you know what serial port the arduino is connected on, you should initialise the serial class with it:*
-```python
-import serial
-from struct import pack
-from time import sleep
-
-ser = serial.Serial(port='/dev/ttyACM0', # ls /dev/tty* to find your port
-		baudrate = 9600,
-		parity = serial.PARITY_NONE,
-		stopbits = serial.STOPBITS_ONE,
-		bytesize = serial.EIGHTBITS,
-		timeout = 1)
-```
-The YABR code on the arduino accepts bytes [0, 1, 2, 4, 8] as driving input commands, with **0b00000000 being 'No movement/ remain stationary'**:
-```python
-# sendByte code
-# 00000000 - Do nothing
-# 00000001 - Turn left
-# 00000010 - Turn right
-# 00000100 - Move forwards
-# 00001000 - Move backwards
-```
-We can then send these bytes over the serial connection, and tell **MABEL** in which direction to move - Here's an example of how to write to the arduino serial port, with a bit of **controller pseudocode** for clarity:
-```python
-while True:
-    sendByte |= 0b00000000 
-    if controller.direction == 'LEFT': # Controller pseudocode 
-        sendByte |= 0b00000001 # This could be any sendByte
-    val = pack("B", sendByte)
-    ser.write(val) # Send the value over to the arduino 
-    sleep(0.04) # Sleep for this period before sending next command
-```
-
-
-
-## Contact/Support
-Thanks for taking an interest in MABEL and its development! If you have any questions or need information whilst building MABEL, please feel free to mention me on twitter [@raspibotics](https://twitter.com/raspibotics) or send me an email at **raspibotics@gmail.com**. ***Whilst this page is still undergoing development, you can find updates and more information on my blog [https://raspibotics.wixsite.com/pibotics-blog](https://raspibotics.wixsite.com/pibotics-blog), where I have been posting about the development of MABEL.***
+- [ ] Tuning PID control gain is incompleted.
